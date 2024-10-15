@@ -1,0 +1,63 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+   id                      String   @id @default(cuid()) @unique
+  firstName              String?
+  lastName               String?
+  email                  String    @unique
+  password               String?
+  emailVerified          Boolean   @default(false)
+  emailVerificationToken String?
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
+  image                  String?
+  keys                   Key[]
+  
+  Session Session[]
+  Account Account[]
+}
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at       Int?
+  token_type       String?
+  scope            String?
+  id_token         String?
+  session_state    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId]) // Ensure unique combination
+}
+model Session {
+  id                 String   @id @default(cuid())
+  sessionToken       String   @unique
+  userId             String
+  expires            DateTime
+  user               User     @relation(fields: [userId], references: [id],onDelete: Cascade)
+}
+model VerificationToken {
+  identifier         String
+  token              String   @unique
+  expires            DateTime
+
+  @@id([identifier, token])
+}
+// ------------------- next auth end -------------------
+model Key {
+  id             String  @id @db.VarChar(255)
+  userId         String
+  hashedPassword String? @db.VarChar(255)
+  user           User    @relation(fields: [userId], references: [id])
+}
